@@ -367,9 +367,9 @@
       copy:
         dest: /etc/postfix/sender_canonical
         content: |
-          www-data admin@e-bladmuziek.nl
-          www-data@vps2.agrarix.net admin@e-bladmuziek.nl
-          root@vps2.agrarix.net admin@e-bladmuziek.nl
+          www-data webmaster@e-bladmuziek.nl
+          www-data@vps2.agrarix.net webmaster@e-bladmuziek.nl
+          root@vps2.agrarix.net webmaster@e-bladmuziek.nl
         owner: root
         group: root
         mode: "0644"
@@ -381,9 +381,9 @@
       copy:
         dest: /etc/postfix/generic
         content: |
-          www-data@vps2.agrarix.net admin@e-bladmuziek.nl
-          www-data admin@e-bladmuziek.nl
-          root@vps2.agrarix.net admin@e-bladmuziek.nl
+          www-data@vps2.agrarix.net webmaster@e-bladmuziek.nl
+          www-data webmaster@e-bladmuziek.nl
+          root@vps2.agrarix.net webmaster@e-bladmuziek.nl
         owner: root
         group: root
         mode: "0644"
