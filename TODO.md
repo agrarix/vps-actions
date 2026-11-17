@@ -9,18 +9,23 @@ Overzicht van openstaande taken, geplande migraties en uitfaseringsacties voor d
 ### 1. Definitieve Productiemigratie e-bladmuziek (VPS1 ➔ VPS2)
 De test- en acceptatieomgeving (`https://new.e-bladmuziek.nl/`) draait reeds 100% operationeel op VPS2 (`212.227.209.36:2223`, zie [README.md - Actie 8](README.md#migratie---actielogboek) en [agrarix/e-bladmuziek](https://github.com/agrarix/e-bladmuziek)). De definitieve overzetting van de productiedomeinen staat nog gepland:
 
-- [ ] **Apache2 VHosts inrichten op VPS2**:
-  - `e-bladmuziek.nl` & `www.e-bladmuziek.nl`
-  - `vijos.e-bladmuziek.nl` & `vijos-plus.e-bladmuziek.nl`
-  - Subdomeinen (`dev.`, `demo.`, `q-a.`, `sites.`) evalueren / archiveren
-- [ ] **Data Delta Synchronisatie**:
-  - Laatste delta-rsync uitvoeren vanaf VPS1 voor eventuele recent gewijzigde partituren of CSV-ledenbestanden
-  - Permissies controleren (`automation:automation`, `htpwd` voor `automation:www-data`)
-- [ ] **Let's Encrypt SSL-certificaten**:
-  - Certbot certificaat aanvragen / uitbreiden op VPS2 voor alle domeinnamen
-- [ ] **DNS Cutover**:
-  - DNS A-records bij domeinregistrar omzetten van `85.214.248.88` (VPS1) naar `212.227.209.36` (VPS2)
-- [ ] **VPS1 VHosts & Certificaten uitschakelen**:
+- [x] **Apache2 VHosts inrichten op VPS2 (Voltooid)**:
+  - `vijos.e-bladmuziek.nl` & `vijos-plus.e-bladmuziek.nl` actief op VPS2
+  - `e-bladmuziek.nl` & `www.e-bladmuziek.nl` actief op VPS2 (301 redirect)
+  - Symlinks en VHost configs getest (`apache2ctl configtest` -> `Syntax OK`)
+- [x] **Data Delta Synchronisatie (Voltooid)**:
+  - Delta-sync uitgevoerd vanaf VPS1 naar VPS2 via `scripts/vps2-migrate-ebladmuziek.sh`
+  - Rechten gecontroleerd (`automation:automation`, `htpwd` op `0770` voor `automation:www-data`)
+- [x] **Let's Encrypt SSL-certificaten (Voltooid)**:
+  - Certificaten voor `vijos.e-bladmuziek.nl` en `www.e-bladmuziek.nl` overgezet naar VPS2 en actief
+  - HTTPS gevalideerd via curl `--resolve` (HTTP 200 / 301)
+- [ ] **DNS Cutover (Wacht op registrar)**:
+  - DNS A-records bij domeinregistrar omzetten van `85.214.248.88` (VPS1) naar `212.227.209.36` (VPS2):
+    - `vijos.e-bladmuziek.nl` ➔ `212.227.209.36`
+    - `e-bladmuziek.nl` ➔ `212.227.209.36`
+    - `www.e-bladmuziek.nl` ➔ `212.227.209.36`
+    - `vijos-plus.e-bladmuziek.nl` ➔ `212.227.209.36`
+- [ ] **VPS1 VHosts & Certificaten uitschakelen (Na DNS cutover)**:
   - Apache vhosts op VPS1 disablen (`a2dissite`)
   - Oude certificaten op VPS1 opschonen (`certbot delete --cert-name ...`)
 

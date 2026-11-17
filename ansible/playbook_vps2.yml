@@ -248,6 +248,26 @@
         creates: /etc/apache2/sites-enabled/new.e-bladmuziek.nl.conf
       notify: Restart Apache
 
+    - name: Ensure symlinks for production e-bladmuziek domains exist
+      file:
+        src: /var/www/vhosts/new.e-bladmuziek.nl
+        dest: "{{ item }}"
+        state: link
+      loop:
+        - /var/www/vhosts/vijos.e-bladmuziek.nl
+        - /var/www/vhosts/e-bladmuziek.nl
+        - /var/www/vhosts/www.e-bladmuziek.nl
+        - /var/www/vhosts/vijos-plus.e-bladmuziek.nl
+
+    - name: Enable production e-bladmuziek Apache sites
+      command: a2ensite {{ item }}
+      args:
+        creates: /etc/apache2/sites-enabled/{{ item }}
+      loop:
+        - vijos.e-bladmuziek.nl.conf
+        - e-bladmuziek.nl.conf
+      notify: Restart Apache
+
     - name: Obtain and install Let's Encrypt SSL certificate for new.e-bladmuziek.nl
       command: >
         certbot --apache
