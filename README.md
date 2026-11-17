@@ -8,6 +8,9 @@ De externe VPS-omgeving bestaat uit twee systemen:
 1. **VPS1 (`agrarix.it` - `85.214.248.88:2223`)**: Oorspronkelijke Strato bare-metal / Ubuntu VPS server. Momenteel in een fase van gefaseerde ontmanteling waarbij actieve domeinen, cronjobs en services migreren naar het lokale Proxmox VE cluster (`presentix` / NAS / `fabrix`) of naar VPS2.
 2. **VPS2 (`vps2.agrarix.net` - `212.227.209.36:2223`)**: Moderne Debian 13 (Trixie) VPS, ingericht via Ansible direct vanaf automation node `fabrix`. Fungeert als schone externe web- en mailnode voor publieke websites zoals `new.e-bladmuziek.nl`, `carmenkalbermatten.ch`, `biancawennink.nl`, `new.biancawennink.nl` en `wennink.eu`.
 
+> [!NOTE]
+> Zie **[TODO.md](TODO.md)** voor het overzicht van nog te migreren onderdelen (waaronder de definitieve productiemigratie van `e-bladmuziek.nl` van VPS1 naar VPS2) en de volledige uitfaseringsstappen van VPS1.
+
 ### VPS Vergelijking & Status Matrix
 
 | Eigenschap | VPS1 (`agrarix.it`) | VPS2 (`vps2.agrarix.net`) | Toelichting |
