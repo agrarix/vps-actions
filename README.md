@@ -223,29 +223,59 @@ Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/
 - **Bevinding**: `wordpress_db` was een inactieve testinstallatie uit juni 2022 voor `wp.agrarix.it` (PI4RCG) met 0 uploads en 3 dummy records. Geen enkele actieve service gebruikte MySQL.
 - **Actie**: Veiligheidsdump gemaakt naar `/root/wordpress_db_backup_20261116.sql.gz`, database gedropt, `mysql.service` gestopt en uitgeschakeld. 140 MB fysiek RAM direct vrijgespeeld op VPS1.
 
+### Actie 11: Migratie Mail & Postfix Virtual Aliases naar nuntix
+- **Datum**: 17 november 2026
+- **Aanleiding**: Uitfasering van de mailrelay- en MX-rol op VPS1 (`agrarix.it`).
+- **Configuratie & Acties**:
+  1. DNS A-record `mail.agrarix.it` omgezet naar WAN IP `178.239.16.116` (thuis router forwarded poort 25 naar `nuntix` `192.168.178.25`).
+  2. Alle virtuele aliassen van VPS1 (`vijos-*@agrarix.it`, `netapp.link`, buurt-, familie- en orkestgroepen) toegevoegd aan `/etc/postfix/virtual` op `nuntix` in een declaratief `AGRARIX_IT` blok.
+  3. `virtual_alias_domains` en `virtual_alias_maps` geconfigureerd in `/etc/postfix/main.cf` op `nuntix`.
+  4. Ansible playbooks `playbook_mailgw.yml` en `playbook_mailgw_postfix.yml` in repo `Proxmox-env` bijgewerkt.
+  5. Live SMTP validatie uitgevoerd via poort 25 (`RCPT TO` geeft `250 2.1.5 Ok`).
+
+### Actie 12: Productiemigratie e-bladmuziek naar VPS2 met behoud Klassieke Interface
+- **Datum**: 17 november 2026
+- **Aanleiding**: Volledige overgang van alle actieve e-bladmuziek productiedomeinen naar VPS2 met 100% behoud van de vertrouwde look & feel voor gebruikers, en isolatie van de nieuwe interface.
+- **Configuratie & Acties**:
+  1. **Webroot & Isolatie**:
+     - Productiemap `/var/www/vhosts/vijos.e-bladmuziek.nl/html/` onafhankelijk ingericht (geen symlink naar `new.`).
+     - Originele HTML- en formulierbestanden (`/toegang/`, `/toegang/zet-eigen-pin/`) 1-op-1 overgezet vanaf VPS1.
+     - Symlinks `e-bladmuziek.nl`, `www.e-bladmuziek.nl` en `vijos-plus.e-bladmuziek.nl` gekoppeld aan de productie-docroot.
+     - Nieuwe v2 responsive interface (`toegang.css`, card styling) strikt geïsoleerd op `new.e-bladmuziek.nl`.
+  2. **CGI PIN-beheer Scripts**:
+     - Originele CGI-scripts (`preset-pin_htaccess.sh` v0.6b en `set-own-pin_htaccess.sh` v0.7) hersteld in `/var/www/cgi-bin/` voor productie.
+     - VHost `new.e-bladmuziek.nl` voorzien van eigen `ScriptAlias /cgi-bin/ /var/www/cgi-bin-new/` voor de v2 scripts.
+     - `deploy-toegang.sh` deployment script bijgewerkt naar `/var/www/cgi-bin-new/`.
+  3. **Mailconfiguratie & Handtekeningen (DKIM/SPF)**:
+     - Postfix `sender_canonical_maps` en `smtp_generic_maps` op VPS2 ingericht: `www-data` afzender wordt herschreven naar `webmaster@e-bladmuziek.nl`.
+     - OpenDKIM op VPS2 ondertekent alle uitgaande mail direct lokaal met de RSA-2048 sleutel (`key._domainkey.e-bladmuziek.nl`).
+     - DNS MX van `e-bladmuziek.nl` omgezet naar `mail.agrarix.it` (`nuntix`).
+     - Inkomende aliassen en catch-all `@e-bladmuziek.nl` op `nuntix` ingesteld naar `e-bladmuziek@agrarix.nl`.
+  4. **Archief**:
+     - `old.e-bladmuziek.nl` geactiveerd in DNS en Apache op VPS1 (en voorbereid op VPS2) als direct archief.
+  5. **SSL Certificaten**:
+     - Let's Encrypt multi-domain certificaten uitgebreid via Certbot op VPS2 (`vijos.e-bladmuziek.nl` + `vijos-plus.` en `e-bladmuziek.nl` + `www.`).
+
 ---
 
 ## Domein Overzicht & Routing Status
 
 ### Actief op VPS2 (`vps2.agrarix.net` - `212.227.209.36`)
+- `vijos.e-bladmuziek.nl` & `vijos-plus.e-bladmuziek.nl` (Productie, klassieke interface)
+- `e-bladmuziek.nl` & `www.e-bladmuziek.nl` (301 redirect naar `vijos.`)
+- `new.e-bladmuziek.nl` (Acceptatie, responsive interface v2)
 - `www.wennink.eu` & `wennink.eu` (inclusief user `pjheise`)
 - `carmenkalbermatten.ch` & `www.carmenkalbermatten.ch`
 - `biancawennink.nl` & `www.biancawennink.nl`
 - `new.biancawennink.nl` (Condoleanceregister)
-- `new.e-bladmuziek.nl`
 
 ### Resterend Actief op VPS1 (`agrarix.it` - `85.214.248.88`)
-- `e-bladmuziek.nl` & `www.e-bladmuziek.nl`
-- `vijos.e-bladmuziek.nl` & `vijos-plus.e-bladmuziek.nl`
-- `dev.e-bladmuziek.nl`
-- `demo.e-bladmuziek.nl`
-- `q-a.e-bladmuziek.nl`
-- `sites.e-bladmuziek.nl`
+- `old.e-bladmuziek.nl` (Archief van de oude VPS1 e-bladmuziek omgeving)
 - `begrijpbaar-met-beeld.nl` & `www.begrijpbaar-met-beeld.nl` (301 redirect)
 - `begrijpbaarmetbeeld.nl` & `www.begrijpbaarmetbeeld.nl` (301 redirect)
-- Postfix Virtual Mail Aliases (`vijos-*@agrarix.it`, `martijndeboer.nl`, etc.)
 
-### Gemigreerd naar Proxmox VE Home Cluster (`presentix` / NAS / `178.239.16.116`)
+### Gemigreerd naar Proxmox VE Home Cluster (`nuntix` / `presentix` / NAS / `178.239.16.116`)
+- `mail.agrarix.it` (Centrale Postfix MX gateway op `nuntix`, afhandeling alle virtuele aliassen `agrarix.it` en `@e-bladmuziek.nl`)
 - `netapp.link`, `www.netapp.link`, `anf.netapp.link`, `edu.netapp.link`, `tr.netapp.link`
 - `kakr.net`, `www.kakr.net`
 - `paulrobertblom.agrarix.net` (`paulrobertblom.nl` 301 redirect)

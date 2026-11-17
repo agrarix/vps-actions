@@ -31,6 +31,11 @@ De test- en acceptatieomgeving (`https://new.e-bladmuziek.nl/`) draait reeds 100
   - Originele CGI-scripts (`preset-pin_htaccess.sh` v0.6b en `set-own-pin_htaccess.sh` v0.7) hersteld in `/var/www/cgi-bin/`
   - Nieuwe v2 responsive interface geïsoleerd op `new.e-bladmuziek.nl` met `/var/www/cgi-bin-new/`
   - `old.e-bladmuziek.nl` geactiveerd op VPS1 (en voorbereid op VPS2) als direct archief van de oude omgeving
+- [x] **Mail & OpenDKIM Configuratie e-bladmuziek.nl (Voltooid)**:
+  - Postfix `sender_canonical_maps` en `smtp_generic_maps` geconfigureerd op VPS2 (`www-data` ➔ `webmaster@e-bladmuziek.nl`)
+  - OpenDKIM op VPS2 ondertekent alle uitgaande mails lokaal met RSA-2048 sleutel (`key._domainkey.e-bladmuziek.nl`)
+  - DNS MX `e-bladmuziek.nl` omgezet naar `mail.agrarix.it` (`nuntix` / `178.239.16.116`)
+  - Virtuele aliassen en catch-all `@e-bladmuziek.nl` op `nuntix` geconfigureerd naar `e-bladmuziek@agrarix.nl`
 - [ ] **VPS1 VHosts & Certificaten uitschakelen (Na validatie)**:
   - Apache vhosts op VPS1 disablen (`a2dissite`) voor gemigreerde sites
   - Oude certificaten op VPS1 opschonen (`certbot delete --cert-name ...`)
