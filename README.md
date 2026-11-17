@@ -58,7 +58,7 @@ De externe VPS-omgeving bestaat uit twee systemen:
    - `begrijpbaar-met-beeld.nl` & `begrijpbaarmetbeeld.nl` (301 redirects naar externe URL).
 4. **Database Status**:
    - `mysql.service` is uitgeschakeld en gestopt. Poort 3306 is gesloten.
-   - De verouderde test-database `wordpress_db` (PI4RCG) is gearchiveerd en verwijderd (zie Incident 10).
+   - De verouderde test-database `wordpress_db` (PI4RCG) is gearchiveerd en verwijderd (zie Actie 10).
 
 ### Domeinverificatie Tool (`active-domain-check.sh`)
 Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/home/maarten/scripts/active-domain-check.sh`):
@@ -146,41 +146,41 @@ Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/
 
 ---
 
-## Incidenten & Migratielogboek
+## Migratie- & Actielogboek
 
-### Incident 1: Postfix Relay Access Denied (454 4.7.1) Loop
+### Actie 1 (Incident): Postfix Relay Access Denied (454 4.7.1) Loop
 - **Datum**: 16 oktober 2026
 - **Oorzaak**: `/etc/mailname` op `agrarix.it` stond historisch op `mail.agrarix.nl` waardoor lokale cron- en root-mails via extern DNS naar `nuntix` werden verzonden en daar als open-relay reject stuitten (`454 Relay access denied`).
 - **Oplossing**: `/etc/mailname` gecorrigeerd naar `agrarix.it`, queue geleegd met `postsuper -d ALL`, OpenDKIM signing hersteld.
 
-### Incident 2: Certbot Renewal Failures & Systemd Crashes
+### Actie 2 (Incident): Certbot Renewal Failures & Systemd Crashes
 - **Datum**: 16 oktober 2026
 - **Oorzaak**: Verlopen renewal-configs (`atostechlab.nl`, `wiki.atostechlab.nl`, `deboer-oostzaan.nl`, `www.agrarix.nl`, `bakkerij-vanbreemen.nl`, `completelynuts.nl`) en een lege 0-byte renewal file `zwerfvuil.agrarix.it.conf` veroorzaakten parse-crashes in `certbot.service`.
 - **Oplossing**: Oude domeinen verwijderd met `certbot delete --cert-name <naam> --non-interactive`, 0-byte configs opgeruimd, service gereset (`systemctl reset-failed certbot.service`).
 
-### Incident 3: maartendeboer.nl & www Redirects naar DokuWiki
+### Actie 3: maartendeboer.nl & www Redirects naar DokuWiki
 - **Datum**: 18 oktober 2026
 - **Oorzaak**: Apache vhosts op `agrarix.it` gebruikten `VirtualDocumentRoot /var/www/vhosts/%0/html` zonder map voor `maartendeboer.nl` (404) en ontbrekend SSL-certificaat.
 - **Oplossing**: Let's Encrypt certificaat uitgebreid met `maartendeboer.nl`, vhosts opgesplitst naar schone 301 redirects richting `https://wiki.maartendeboer.nl/`, vastgelegd in Ansible playbook `playbook_agrarix_maartendeboer.yml`.
 
-### Incident 4: Migratie 6 Subdomeinen van agrarix.it naar Proxmox NAS
+### Actie 4: Migratie 6 Subdomeinen van agrarix.it naar Proxmox NAS
 - **Datum**: 23 oktober 2026
 - **Aanleiding**: Consolidatie van statische websites naar de centrale Proxmox NAS (`/mnt/nas/WWW/domains/`) en `presentix` edge reverse proxy.
 - **Gemigreerde domeinen**: `asw85.agrarix.it`, `deboer-oostzaan.agrarix.it`, `lcsn.agrarix.it`, `logo.agrarix.it`, `monavail.agrarix.it`, `techlab.agrarix.it` (301 redirects op `agrarix.it` naar `*.agrarix.net`).
 
-### Incident 5: Migratie kakr.net & Consolidatie paulrobertblom naar .agrarix.net
+### Actie 5: Migratie kakr.net & Consolidatie paulrobertblom naar .agrarix.net
 - **Datum**: 27 oktober 2026
 - **Gemigreerde domeinen**:
   - `kakr.net` + `www.kakr.net`: Webroot naar NAS `/mnt/nas/WWW/domains/kakr.net/pages/`, DNS A-record naar `178.239.16.116`, vhost op `presentix`.
   - `paulrobertblom.nl` ➔ `paulrobertblom.agrarix.net`: Nieuw Let's Encrypt ECDSA certificaat, permanente 301 redirect.
 
-### Incident 6: Migratie netapp.link Cluster (netapp.link, anf, edu, tr)
+### Actie 6: Migratie netapp.link Cluster (netapp.link, anf, edu, tr)
 - **Datum**: 27 oktober 2026
 - **Aanleiding**: Overzetten van de zwaarst bezochte linkcollectie en PDF-archief (24.000+ hits/dag) naar Proxmox cluster (`presentix` + QNAP NFS).
 - **Gemigreerde domeinen**: `netapp.link`, `www.netapp.link`, `anf.netapp.link`, `edu.netapp.link`, `tr.netapp.link`.
 - **Configuratie**: Docroots naar NAS met symlink `html ➔ pages`, HTTP/2 Let's Encrypt SSL en asset caching (7d) op `presentix`.
 
-### Incident 7: Migratie carmenkalbermatten.ch, biancawennink.nl & Condoleanceregister naar VPS2
+### Actie 7: Migratie carmenkalbermatten.ch, biancawennink.nl & Condoleanceregister naar VPS2
 - **Datum**: 31 oktober 2026
 - **Aanleiding**: Verhuizing van statische herinneringswebsites van `agrarix.it` naar `vps2.agrarix.net` (`212.227.209.36:2223`).
 - **Configuratie & Acties**:
@@ -190,7 +190,7 @@ Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/
   4. Nieuw PHP 8.4 condoleanceregister met pre-moderatie en e-mailnotificaties uitgerold op `new.biancawennink.nl` via `scripts/vps2-deploy-condoleance.sh`.
   5. DNS A-records bij Mijndomein omgezet naar `212.227.209.36`.
 
-### Incident 8: Inrichting new.e-bladmuziek.nl Acceptatieomgeving op VPS2
+### Actie 8: Inrichting new.e-bladmuziek.nl Acceptatieomgeving op VPS2
 - **Datum**: 31 oktober 2026
 - **Aanleiding**: Voorbereiding van de migratie van de e-bladmuziek bibliotheek vanaf VPS1 (`agrarix.it`) door het inrichten van een schone test- en acceptatieomgeving op VPS2 (`vps2.agrarix.net`).
 - **Configuratie & Acties**:
@@ -202,7 +202,7 @@ Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/
   6. Git deployment pipeline ingericht met Deploy Key op GitHub repository [`agrarix/e-bladmuziek`](https://github.com/agrarix/e-bladmuziek).
 - **Status**: Acceptatie-omgeving `https://new.e-bladmuziek.nl/` 100% operationeel op VPS2. Productiesites (`e-bladmuziek.nl`, `vijos.e-bladmuziek.nl`) draaien nog op VPS1 tot de definitieve livegang. Volledige documentatie in repo [`e-bladmuziek`](https://github.com/agrarix/e-bladmuziek).
 
-### Incident 9: Migratie www.wennink.eu (+ wennink.eu) en User pjheise naar VPS2
+### Actie 9: Migratie www.wennink.eu (+ wennink.eu) en User pjheise naar VPS2
 - **Datum**: 16 november 2026
 - **Aanleiding**: Verhuizing van `wennink.eu` en beheerder `pjheise` van `agrarix.it` naar `vps2.agrarix.net` (`212.227.209.36:2223`).
 - **Configuratie**:
@@ -214,7 +214,7 @@ Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/
   6. Oude Apache vhosts en certificaten op `agrarix.it` verwijderd.
   7. SSH-daemon op VPS2 geconfigureerd op poort `2223` (identiek aan `agrarix.it`), zodat `pjheise` naadloos via SFTP/SSH kan inloggen.
 
-### Incident 10: Opruiming wordpress_db & Deactivatie MySQL Daemon op VPS1
+### Actie 10: Opruiming wordpress_db & Deactivatie MySQL Daemon op VPS1
 - **Datum**: 16 november 2026
 - **Aanleiding**: Opruiming van inactieve databases op `agrarix.it`.
 - **Bevinding**: `wordpress_db` was een inactieve testinstallatie uit juni 2022 voor `wp.agrarix.it` (PI4RCG) met 0 uploads en 3 dummy records. Geen enkele actieve service gebruikte MySQL.
