@@ -222,6 +222,13 @@
               ServerAlias new.e-bladmuziek.nl
               DocumentRoot /var/www/vhosts/new.e-bladmuziek.nl/html
 
+              ScriptAlias /cgi-bin/ /var/www/cgi-bin-new/
+              <Directory "/var/www/cgi-bin-new">
+                  AllowOverride None
+                  Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
+                  Require all granted
+              </Directory>
+
               <Directory /var/www/vhosts/new.e-bladmuziek.nl/html>
                   Options Indexes FollowSymLinks MultiViews
                   AllowOverride All
@@ -234,7 +241,7 @@
               <IfModule mod_rewrite.c>
                 RewriteEngine On
                 RewriteCond %{HTTP_USER_AGENT} "android|blackberry|googlebot-mobile|iemobile|ipad|iphone|ipod|opera mobile|palmos|webos" [NC]
-                RewriteRule "^(.*).html" "$1.htm" [L]
+                RewriteRule "^(.*)\.html$" "$1.htm" [L]
               </IfModule>
           </VirtualHost>
         owner: root
@@ -248,13 +255,20 @@
         creates: /etc/apache2/sites-enabled/new.e-bladmuziek.nl.conf
       notify: Restart Apache
 
+    - name: Ensure production vijos.e-bladmuziek.nl vhost directory exists
+      file:
+        path: /var/www/vhosts/vijos.e-bladmuziek.nl/html
+        state: directory
+        owner: automation
+        group: automation
+        mode: "0755"
+
     - name: Ensure symlinks for production e-bladmuziek domains exist
       file:
-        src: /var/www/vhosts/new.e-bladmuziek.nl
+        src: /var/www/vhosts/vijos.e-bladmuziek.nl
         dest: "{{ item }}"
         state: link
       loop:
-        - /var/www/vhosts/vijos.e-bladmuziek.nl
         - /var/www/vhosts/e-bladmuziek.nl
         - /var/www/vhosts/www.e-bladmuziek.nl
         - /var/www/vhosts/vijos-plus.e-bladmuziek.nl

@@ -19,14 +19,20 @@ De test- en acceptatieomgeving (`https://new.e-bladmuziek.nl/`) draait reeds 100
 - [x] **Let's Encrypt SSL-certificaten (Voltooid)**:
   - Certificaten voor `vijos.e-bladmuziek.nl` en `www.e-bladmuziek.nl` overgezet naar VPS2 en actief
   - HTTPS gevalideerd via curl `--resolve` (HTTP 200 / 301)
-- [ ] **DNS Cutover (Wacht op registrar)**:
-  - DNS A-records bij domeinregistrar omzetten van `85.214.248.88` (VPS1) naar `212.227.209.36` (VPS2):
+- [x] **DNS Cutover (Voltooid)**:
+  - DNS A-records bij domeinregistrar omgezet naar `212.227.209.36` (VPS2):
     - `vijos.e-bladmuziek.nl` ➔ `212.227.209.36`
     - `e-bladmuziek.nl` ➔ `212.227.209.36`
     - `www.e-bladmuziek.nl` ➔ `212.227.209.36`
     - `vijos-plus.e-bladmuziek.nl` ➔ `212.227.209.36`
-- [ ] **VPS1 VHosts & Certificaten uitschakelen (Na DNS cutover)**:
-  - Apache vhosts op VPS1 disablen (`a2dissite`)
+  - DNS A-record `old.e-bladmuziek.nl` wijst naar `85.214.248.88` (VPS1)
+- [x] **Behoud Originele Interface op vijos.e-bladmuziek.nl (Voltooid)**:
+  - `vijos.e-bladmuziek.nl` losgekoppeld van `new.e-bladmuziek.nl` [eigen webroot met identieke VPS1 bestanden]
+  - Originele CGI-scripts (`preset-pin_htaccess.sh` v0.6b en `set-own-pin_htaccess.sh` v0.7) hersteld in `/var/www/cgi-bin/`
+  - Nieuwe v2 responsive interface geïsoleerd op `new.e-bladmuziek.nl` met `/var/www/cgi-bin-new/`
+  - `old.e-bladmuziek.nl` geactiveerd op VPS1 (en voorbereid op VPS2) als direct archief van de oude omgeving
+- [ ] **VPS1 VHosts & Certificaten uitschakelen (Na validatie)**:
+  - Apache vhosts op VPS1 disablen (`a2dissite`) voor gemigreerde sites
   - Oude certificaten op VPS1 opschonen (`certbot delete --cert-name ...`)
 
 ---
