@@ -358,7 +358,23 @@
         - { regexp: '^smtp_tls_CAfile', line: 'smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt' }
         - { regexp: '^smtp_tls_session_cache_database', line: 'smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache' }
         - { regexp: '^smtpd_relay_restrictions', line: 'smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination' }
+        - { regexp: '^relayhost', line: 'relayhost = [85.214.248.88]:25' }
+        - { regexp: '^smtp_generic_maps', line: 'smtp_generic_maps = hash:/etc/postfix/generic' }
       notify: Restart Postfix
+
+    - name: Deploy Postfix generic maps for outbound address rewriting
+      copy:
+        dest: /etc/postfix/generic
+        content: |
+          www-data@vps2.agrarix.net admin@e-bladmuziek.nl
+          www-data admin@e-bladmuziek.nl
+          root@vps2.agrarix.net admin@e-bladmuziek.nl
+        owner: root
+        group: root
+        mode: "0644"
+      notify:
+        - Postmap generic
+        - Restart Postfix
 
     - name: Ensure Postfix service is enabled and started
       systemd:
@@ -389,6 +405,14 @@
     - name: Restart SSH
       systemd:
         name: ssh
+        state: restarted
+
+    - name: Postmap generic
+      command: /usr/sbin/postmap /etc/postfix/generic
+
+    - name: Restart Postfix
+      systemd:
+        name: postfix
         state: restarted
 
     - name: Restart Shellinabox
