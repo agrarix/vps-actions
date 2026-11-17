@@ -359,8 +359,23 @@
         - { regexp: '^smtp_tls_session_cache_database', line: 'smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache' }
         - { regexp: '^smtpd_relay_restrictions', line: 'smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination' }
         - { regexp: '^relayhost', line: 'relayhost = [85.214.248.88]:25' }
+        - { regexp: '^sender_canonical_maps', line: 'sender_canonical_maps = hash:/etc/postfix/sender_canonical' }
         - { regexp: '^smtp_generic_maps', line: 'smtp_generic_maps = hash:/etc/postfix/generic' }
       notify: Restart Postfix
+
+    - name: Deploy Postfix canonical maps for pre-milter sender rewriting
+      copy:
+        dest: /etc/postfix/sender_canonical
+        content: |
+          www-data admin@e-bladmuziek.nl
+          www-data@vps2.agrarix.net admin@e-bladmuziek.nl
+          root@vps2.agrarix.net admin@e-bladmuziek.nl
+        owner: root
+        group: root
+        mode: "0644"
+      notify:
+        - Postmap sender_canonical
+        - Restart Postfix
 
     - name: Deploy Postfix generic maps for outbound address rewriting
       copy:
@@ -406,6 +421,9 @@
       systemd:
         name: ssh
         state: restarted
+
+    - name: Postmap sender_canonical
+      command: /usr/sbin/postmap /etc/postfix/sender_canonical
 
     - name: Postmap generic
       command: /usr/sbin/postmap /etc/postfix/generic
