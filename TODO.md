@@ -44,8 +44,11 @@ Na afronding van de productiemigratie van e-bladmuziek:
 
 - [ ] **Resterende 301 redirects**:
   - `begrijpbaar-met-beeld.nl` & `begrijpbaarmetbeeld.nl` verhuizen naar registrar DNS redirects of `presentix`
-- [ ] **Postfix Virtual Aliases**:
-  - Mail-aliassen (`vijos-*@agrarix.it`, etc.) overzetten naar `nuntix` (`192.168.178.25`) of VPS2
+- [x] **Postfix Virtual Aliases (Voltooid)**:
+  - DNS A-record `mail.agrarix.it` omgezet naar `178.239.16.116` (thuis IP / `nuntix`)
+  - Alle mail-aliassen (`vijos-*@agrarix.it`, `netapp.link`, `e-bladmuziek.nl`, etc.) overgezet naar `/etc/postfix/virtual` op `nuntix` (`192.168.178.25`)
+  - `virtual_alias_domains` en `virtual_alias_maps` op `nuntix` geactiveerd en getest (SMTP RCPT TO geeft `250 2.1.5 Ok`)
+  - Ansible playbooks `playbook_mailgw.yml` en `playbook_mailgw_postfix.yml` bijgewerkt met `AGRARIX_IT` blok
 - [ ] **Syslog WAN mTLS forwarding**:
   - Forwarding op `registrix` uitschakelen zodra VPS1 uit productie gaat
 - [ ] **Opzegging**:
