@@ -26,14 +26,16 @@ De test- en acceptatieomgeving (`https://new.e-bladmuziek.nl/`) draait reeds 100
 
 ---
 
-### 2. Migratiescripts & Ansible Playbook overzetten naar repo `vps`
-Momenteel staan de migratiescripts fysiek nog in `Proxmox-env/scripts/` en `Proxmox-env/ansible/`:
+### 2. Migratiescripts & Ansible Playbook overzetten naar repo `vps` (Voltooid)
+Migratiescripts en Ansible configuratie zijn overgezet naar de repository (`scripts/` en `ansible/`):
 
-- [ ] `scripts/vps2-migrate-carmen.sh` overzetten naar `agrarix/vps`
-- [ ] `scripts/vps2-migrate-bianca.sh` overzetten naar `agrarix/vps`
-- [ ] `scripts/vps2-migrate-wennink.sh` overzetten naar `agrarix/vps`
-- [ ] `scripts/vps2-deploy-condoleance.sh` overzetten naar `agrarix/vps`
-- [ ] `ansible/playbook_vps2.yml` overzetten naar `agrarix/vps`
+- [x] `scripts/vps2-migrate-carmen.sh` overzetten naar `agrarix/vps`
+- [x] `scripts/vps2-migrate-bianca.sh` overzetten naar `agrarix/vps`
+- [x] `scripts/vps2-migrate-wennink.sh` overzetten naar `agrarix/vps`
+- [x] `scripts/vps2-deploy-condoleance.sh` overzetten naar `agrarix/vps`
+- [x] `scripts/vps2-setup-new-bianca.sh`, `scripts/vps2-test-moderation.sh`, `scripts/test-condoleance.py`
+- [x] `scripts/scan-vps2-vhosts.py` en `scripts/active-domain-check.sh`
+- [x] `ansible/playbook_vps2.yml` en `ansible/inventory.ini` overzetten naar `agrarix/vps`
 
 ---
 

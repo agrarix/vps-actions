@@ -1,0 +1,373 @@
+---
+- name: Configure VPS2 Webserver (vps2.agrarix.net)
+  hosts: vps2
+  become: yes
+  gather_facts: yes
+
+  vars:
+    target_user: automation
+    target_uid: 1001
+    ssh_public_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAMcZKA9SmsFnkHAZkgqJh8ioiW4osJRsEEdbA1CB99U automation@fabrix"
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJtVDfiI5OOqkGYUS9a5mFuJPWA+pvuCFZZZLiM0y6Ut maarten@fabrix"
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMc7tICNehiVz3i1hjLVvLt8vxKuLkkdUISH+wxARj+i maarten@techlab-automation"
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII2IxSa92sj4K+C8rnC+rvJhOS9ZeSRGMCDyOsZXcmi2 antigravity@agrarix.net"
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDGY6LOg7sCINgz42x/Kw4dWTSMhULVRIgCrB79MRQkF nl19471@fenestrix"
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA4C2boKD510mewVvFXfbQXprfFXmHC8mDT32V10+wkw maarten@rpi"
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP3/K1qwOtpagSkvwsnFFRV5QW7xqVE8FJGrkBrNU1Ux automation@automation"
+
+  tasks:
+    - name: Set system timezone to Europe/Amsterdam
+      timezone:
+        name: Europe/Amsterdam
+
+    - name: Ensure APT cache is updated
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required base packages and Apache
+      apt:
+        name:
+          - sudo
+          - openssh-server
+          - curl
+          - ca-certificates
+          - htop
+          - net-tools
+          - git
+          - rsync
+          - apache2
+          - certbot
+          - python3-certbot-apache
+          - shellinabox
+          - cron
+        state: present
+
+    - name: Ensure automation group exists with GID {{ target_uid }}
+      group:
+        name: "{{ target_user }}"
+        gid: "{{ target_uid }}"
+        state: present
+
+    - name: Ensure automation user exists with UID {{ target_uid }}
+      user:
+        name: "{{ target_user }}"
+        uid: "{{ target_uid }}"
+        group: "{{ target_user }}"
+        groups: sudo
+        append: yes
+        shell: /bin/bash
+        create_home: yes
+        state: present
+
+    - name: Configure passwordless sudo for automation
+      copy:
+        dest: "/etc/sudoers.d/{{ target_user }}"
+        content: "{{ target_user }} ALL=(ALL) NOPASSWD: ALL\n"
+        mode: "0440"
+        validate: /usr/sbin/visudo -cf %s
+
+    - name: Ensure .ssh directories exist
+      file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
+        mode: "0700"
+      loop:
+        - { path: "/home/{{ target_user }}/.ssh", owner: "{{ target_user }}", group: "{{ target_user }}" }
+        - { path: "/home/maarten/.ssh", owner: "maarten", group: "maarten" }
+        - { path: "/root/.ssh", owner: "root", group: "root" }
+
+    - name: Configure SSH daemon port to 2223 (/etc/ssh/sshd_config.d/port.conf)
+      copy:
+        dest: /etc/ssh/sshd_config.d/port.conf
+        content: "Port 2223\n"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart SSH
+
+    - name: Inject authorized SSH keys for automation
+      authorized_key:
+        user: "{{ target_user }}"
+        key: "{{ ssh_public_keys | join('\n') }}"
+        state: present
+
+    - name: Inject authorized SSH keys for maarten
+      authorized_key:
+        user: maarten
+        key: "{{ ssh_public_keys | join('\n') }}"
+        state: present
+
+    - name: Inject authorized SSH keys for root
+      authorized_key:
+        user: root
+        key: "{{ ssh_public_keys | join('\n') }}"
+        state: present
+
+    - name: Ensure wennink group exists with GID 1013
+      group:
+        name: wennink
+        gid: 1013
+        state: present
+
+    - name: Ensure pjheise user exists with UID 1012
+      user:
+        name: pjheise
+        uid: 1012
+        group: wennink
+        groups: www-data
+        append: yes
+        home: /var/www/vhosts/www.wennink.eu/html
+        create_home: no
+        shell: /bin/bash
+        comment: pjheise@gmail.com
+        password: "$6$oyANarNI$gtqMvDrKZs2Z0Ey.kjvi5YLga/NcgfKdjNsmAiBk/5WOeYyLKKfrsX1sue1SbgETcSqZo1oHImwoCZCveCD8L0"
+        state: present
+
+    - name: Ensure Apache2 service is enabled and started
+      systemd:
+        name: apache2
+        enabled: yes
+        state: started
+
+    - name: Ensure default web directory exists
+      file:
+        path: /var/www/html
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: "0755"
+
+    - name: Create initial Apache placeholder page
+      copy:
+        dest: /var/www/html/index.html
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>vps2.agrarix.net</title>
+            <style>
+              body { font-family: sans-serif; background: #0e1117; color: #e6edf3; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+              .box { text-align: center; border: 1px solid #30363d; border-radius: 8px; padding: 40px; background: #161b22; }
+              h1 { color: #58a6ff; margin: 0 0 10px 0; }
+              p { color: #8b949e; margin: 5px 0; }
+            </style>
+          </head>
+          <body>
+            <div class="box">
+              <h1>vps2.agrarix.net</h1>
+              <p>Apache HTTP Server running on Debian 13 (Trixie)</p>
+              <p>Configured with Ansible from fabrix</p>
+            </div>
+          </body>
+          </html>
+        owner: www-data
+        group: www-data
+        mode: "0644"
+
+    - name: Verify Apache2 local HTTP response
+      uri:
+        url: "http://127.0.0.1"
+        return_content: yes
+        status_code: 200
+      register: apache_check
+
+    - name: Display verification status
+      debug:
+        msg: "Apache is active and serving HTTP 200 on vps2.agrarix.net!"
+
+    - name: Enable Apache rewrite and ssl modules
+      apache2_module:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - rewrite
+        - ssl
+      notify: Restart Apache
+
+    - name: Ensure new.e-bladmuziek.nl vhost directory exists
+      file:
+        path: /var/www/vhosts/new.e-bladmuziek.nl/html
+        state: directory
+        owner: automation
+        group: automation
+        mode: "0755"
+
+    - name: Ensure automation e-bladmuziek htpwd directory exists
+      file:
+        path: /home/automation/e-bladmuziek/htpwd
+        state: directory
+        owner: automation
+        group: www-data
+        mode: "0750"
+
+    - name: Ensure backward compatibility symlink /home/maarten/e-bladmuziek exists
+      file:
+        src: /home/automation/e-bladmuziek
+        dest: /home/maarten/e-bladmuziek
+        state: link
+        owner: maarten
+        group: maarten
+
+    - name: Deploy Apache vhost for new.e-bladmuziek.nl
+      copy:
+        dest: /etc/apache2/sites-available/new.e-bladmuziek.nl.conf
+        content: |
+          <VirtualHost *:80>
+              ServerAdmin webadmin@agrarix.net
+              ServerName new.e-bladmuziek.nl
+              ServerAlias new.e-bladmuziek.nl
+              DocumentRoot /var/www/vhosts/new.e-bladmuziek.nl/html
+
+              <Directory /var/www/vhosts/new.e-bladmuziek.nl/html>
+                  Options Indexes FollowSymLinks MultiViews
+                  AllowOverride All
+                  Require all granted
+              </Directory>
+
+              ErrorLog ${APACHE_LOG_DIR}/new.e-bladmuziek.nl_error.log
+              CustomLog ${APACHE_LOG_DIR}/new.e-bladmuziek.nl_access.log combined
+
+              <IfModule mod_rewrite.c>
+                RewriteEngine On
+                RewriteCond %{HTTP_USER_AGENT} "android|blackberry|googlebot-mobile|iemobile|ipad|iphone|ipod|opera mobile|palmos|webos" [NC]
+                RewriteRule "^(.*).html" "$1.htm" [L]
+              </IfModule>
+          </VirtualHost>
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart Apache
+
+    - name: Enable new.e-bladmuziek.nl Apache site
+      command: a2ensite new.e-bladmuziek.nl.conf
+      args:
+        creates: /etc/apache2/sites-enabled/new.e-bladmuziek.nl.conf
+      notify: Restart Apache
+
+    - name: Obtain and install Let's Encrypt SSL certificate for new.e-bladmuziek.nl
+      command: >
+        certbot --apache
+        -d new.e-bladmuziek.nl
+        --non-interactive
+        --agree-tos
+        -m maarten@agrarix.nl
+        --redirect
+      args:
+        creates: /etc/letsencrypt/live/new.e-bladmuziek.nl/fullchain.pem
+      notify: Restart Apache
+
+    - name: Ensure www.wennink.eu vhost directory exists
+      file:
+        path: /var/www/vhosts/www.wennink.eu/html
+        state: directory
+        owner: pjheise
+        group: wennink
+        mode: "0775"
+
+    - name: Ensure symlink wennink.eu exists
+      file:
+        src: /var/www/vhosts/www.wennink.eu
+        dest: /var/www/vhosts/wennink.eu
+        state: link
+        owner: pjheise
+        group: wennink
+
+    - name: Preconfigure Postfix debconf selections
+      debconf:
+        name: postfix
+        question: "{{ item.question }}"
+        value: "{{ item.value }}"
+        vtype: "{{ item.vtype }}"
+      loop:
+        - { question: 'postfix/main_mailer_type', value: 'Internet Site', vtype: 'select' }
+        - { question: 'postfix/mailname', value: 'vps2.agrarix.net', vtype: 'string' }
+
+    - name: Ensure /etc/mailname contains vps2.agrarix.net
+      copy:
+        dest: /etc/mailname
+        content: "vps2.agrarix.net\n"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart Postfix
+
+    - name: Install Postfix and Mailutils
+      apt:
+        name:
+          - postfix
+          - mailutils
+          - libsasl2-modules
+        state: present
+
+    - name: Configure Postfix main.cf parameters
+      lineinfile:
+        path: /etc/postfix/main.cf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        state: present
+      loop:
+        - { regexp: '^myhostname', line: 'myhostname = vps2.agrarix.net' }
+        - { regexp: '^myorigin', line: 'myorigin = /etc/mailname' }
+        - { regexp: '^mydestination', line: 'mydestination = $myhostname, vps2.agrarix.net, localhost.agrarix.net, localhost' }
+        - { regexp: '^mynetworks', line: 'mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128' }
+        - { regexp: '^inet_interfaces', line: 'inet_interfaces = loopback-only' }
+        - { regexp: '^inet_protocols', line: 'inet_protocols = ipv4' }
+        - { regexp: '^biff', line: 'biff = no' }
+        - { regexp: '^append_dot_mydomain', line: 'append_dot_mydomain = no' }
+        - { regexp: '^readme_directory', line: 'readme_directory = no' }
+        - { regexp: '^compatibility_level', line: 'compatibility_level = 2' }
+        - { regexp: '^smtp_tls_security_level', line: 'smtp_tls_security_level = may' }
+        - { regexp: '^smtp_tls_CAfile', line: 'smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt' }
+        - { regexp: '^smtp_tls_session_cache_database', line: 'smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache' }
+        - { regexp: '^smtpd_relay_restrictions', line: 'smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination' }
+      notify: Restart Postfix
+
+    - name: Ensure Postfix service is enabled and started
+      systemd:
+        name: postfix
+        enabled: yes
+        state: started
+
+    - name: Configure Shellinabox defaults (/etc/default/shellinabox)
+      copy:
+        dest: /etc/default/shellinabox
+        content: |
+          # Managed by Ansible (playbook_vps2.yml)
+          SHELLINABOX_DAEMON_START=1
+          SHELLINABOX_PORT=4242
+          SHELLINABOX_ARGS="--no-beep --disable-ssl"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart Shellinabox
+
+    - name: Ensure Shellinabox service is enabled and started
+      systemd:
+        name: shellinabox
+        enabled: yes
+        state: started
+
+  handlers:
+    - name: Restart SSH
+      systemd:
+        name: ssh
+        state: restarted
+
+    - name: Restart Shellinabox
+      systemd:
+        name: shellinabox
+        state: restarted
+
+    - name: Restart Postfix
+      systemd:
+        name: postfix
+        state: restarted
+
+    - name: Restart Apache
+      systemd:
+        name: apache2
+        state: restarted
