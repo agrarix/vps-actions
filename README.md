@@ -1,14 +1,14 @@
 # Agrarix VPS Infrastructure & Management
 
+## Intro
+
 Centraal documentatie- en beheerhandboek voor de externe Virtual Private Servers (VPS) binnen de **Agrarix** netwerkarchitectuur.
 
 De externe VPS-omgeving bestaat uit twee systemen:
 1. **VPS1 (`agrarix.it` - `85.214.248.88:2223`)**: Oorspronkelijke Strato bare-metal / Ubuntu VPS server. Momenteel in een fase van gefaseerde ontmanteling waarbij actieve domeinen, cronjobs en services migreren naar het lokale Proxmox VE cluster (`presentix` / NAS / `fabrix`) of naar VPS2.
 2. **VPS2 (`vps2.agrarix.net` - `212.227.209.36:2223`)**: Moderne Debian 13 (Trixie) VPS, ingericht via Ansible direct vanaf automation node `fabrix`. Fungeert als schone externe web- en mailnode voor publieke websites zoals `new.e-bladmuziek.nl`, `carmenkalbermatten.ch`, `biancawennink.nl`, `new.biancawennink.nl` en `wennink.eu`.
 
----
-
-## 📊 VPS Vergelijking & Status Matrix
+### VPS Vergelijking & Status Matrix
 
 | Eigenschap | VPS1 (`agrarix.it`) | VPS2 (`vps2.agrarix.net`) | Toelichting |
 | :--- | :--- | :--- | :--- |
@@ -25,9 +25,56 @@ De externe VPS-omgeving bestaat uit twee systemen:
 
 ---
 
-## 🚀 Deel 1: Externe Web- & Mailnode VPS2 (`vps2.agrarix.net`)
+## VPS1 (agrarix.it)
 
-### 1.1 Serverprofiel & Toegang
+### Serverprofiel & Netwerk
+- **Hostnaam**: `agrarix.it` / `h2828555.stratoserver.net`
+- **Publiek IP**: `85.214.248.88`
+- **SSH-poort**: `2223` (poort 22 geblokkeerd/uitgeschakeld)
+- **Verbinding via fabrix**:
+  ```bash
+  ssh -p 2223 root@85.214.248.88
+  ```
+- **Brute-Force Protectie (Fail2ban)**:
+  - Actief op SSH-poort `2223` (`/etc/fail2ban/jail.local`).
+  - Blokkeert bots na 3 mislukte pogingen binnen 10 minuten voor 24 uur (`bantime = 86400`).
+  - Whitelist (`ignoreip`) voor thuis-IP (`178.239.16.116`), localhost en server-IP.
+
+### Actieve Rollen & Resterende Services
+1. **Mail Relay & MX Node (Postfix + OpenDKIM)**:
+   - Publieke MX server op poort 25 voor `mail.agrarix.it` (`85.214.248.88`).
+   - `/etc/mailname`: Ingesteld op `agrarix.it`.
+   - `/etc/aliases`: Lokale cron- en root-mails routeren naar `it-mbx@deboer-wennink.nl`.
+   - `/etc/postfix/virtual`: Actieve virtuele mail-forwarding:
+     - ViJoS mailings (`vijos-bestuur@agrarix.it`, `vijos-webwinkel@`, `vijos-webmaster@`, etc.).
+     - Aliasing voor `e-bladmuziek.nl`, `begrijpbaar-met-beeld.nl`, `martijndeboer.nl`, `leoniewennink.nl`, `ernadevries.nl`.
+   - OpenDKIM milter op `127.0.0.1:8891` (cryptografische signing voor `agrarix.it`, `pa4mdb.nl`, `agrarix.nl`).
+2. **Syslog Forwarding over WAN (mTLS RFC 5425)**:
+   - Rsyslog forwardt realtime systeemlogs (`*.*`) over WAN naar `registrix` (`mail.agrarix.net:6514`).
+   - Encryptie en authenticatie via x509 certificaten in `/etc/rsyslog-tls/`.
+   - Lokale disk queue `q_registrix` buffert logs bij internetonderbrekingen.
+3. **Resterende Actieve Websites op VPS1 (Apache 2.4.18)**:
+   - `e-bladmuziek.nl` cluster (`e-bladmuziek.nl`, `www.e-bladmuziek.nl`, `vijos.e-bladmuziek.nl`, `dev.e-bladmuziek.nl`, `demo.e-bladmuziek.nl`, `q-a.e-bladmuziek.nl`, `sites.e-bladmuziek.nl`).
+   - `begrijpbaar-met-beeld.nl` & `begrijpbaarmetbeeld.nl` (301 redirects naar externe URL).
+4. **Database Status**:
+   - `mysql.service` is uitgeschakeld en gestopt. Poort 3306 is gesloten.
+   - De verouderde test-database `wordpress_db` (PI4RCG) is gearchiveerd en verwijderd (zie Incident 8).
+
+### Domeinverificatie Tool (`active-domain-check.sh`)
+Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/home/maarten/scripts/active-domain-check.sh`):
+- Controleert in realtime alle Apache vhosts, DNS A-records, HTTP/HTTPS statuscodes en SSL-certificaten.
+- Filter-opties:
+  - `active-domain-check`: Volledig overzicht van alle vhosts.
+  - `active-domain-check -l`: Alleen domeinen die daadwerkelijk live naar `agrarix.it` (`85.214.248.88`) routeren.
+  - `active-domain-check -m`: Alleen domeinen gemigreerd naar Proxmox Home (`178.239.16.x`).
+  - `active-domain-check -a`: Inclusief historische weesmappen in `/var/www/vhosts/`.
+  - `active-domain-check <domein1> <domein2>`: Specifieke domeinen inspecteren.
+
+---
+
+## VPS2 (vps2.agrarix.net)
+
+### Serverprofiel & Toegang
 - **Hostnaam**: `vps2.agrarix.net`
 - **Publiek IP**: `212.227.209.36`
 - **SSH-poort**: `2223`
@@ -45,7 +92,7 @@ De externe VPS-omgeving bestaat uit twee systemen:
   - `pjheise` (UID 1012, groep `wennink` GID 1013, secundair `www-data`): Webbeheerder voor `www.wennink.eu`, home directory `/var/www/vhosts/www.wennink.eu/html`, login via SFTP/SSH op poort 2223.
   - `root`: SSH-sleutels geïnjecteerd.
 
-### 1.2 Webserver (Apache2) & Gehoste Domeinen
+### Webserver (Apache2) & Gehoste Domeinen
 
 #### A. `new.e-bladmuziek.nl`
 - **DNS**: A-record ➔ `212.227.209.36`
@@ -89,7 +136,7 @@ De externe VPS-omgeving bestaat uit twee systemen:
 - **SSL**: Let's Encrypt multi-domein certificaat (dekt zowel apex `wennink.eu` als `www.wennink.eu`).
 - **Migratiescript**: `scripts/vps2-migrate-wennink.sh`.
 
-### 1.3 Mail Functionaliteit (Postfix op VPS2)
+### Mail Functionaliteit (Postfix op VPS2)
 - **Rol**: Lokale Mail Transport Agent (MTA) voor veilige uitgaande mailverzending (notificaties, contactformulieren).
 - **MTA Type**: `Internet Site` met directe bezorging over poort 25 (geen externe relayhost nodig).
 - **Netwerk Binding**: `inet_interfaces = loopback-only` (luistert uitsluitend op `127.0.0.1`, geen extern spam-/open-relay risico).
@@ -99,54 +146,7 @@ De externe VPS-omgeving bestaat uit twee systemen:
 
 ---
 
-## 🏛️ Deel 2: Externe Legacy VPS1 (`agrarix.it`)
-
-### 2.1 Serverprofiel & Netwerk
-- **Hostnaam**: `agrarix.it` / `h2828555.stratoserver.net`
-- **Publiek IP**: `85.214.248.88`
-- **SSH-poort**: `2223` (poort 22 geblokkeerd/uitgeschakeld)
-- **Verbinding via fabrix**:
-  ```bash
-  ssh -p 2223 root@85.214.248.88
-  ```
-- **Brute-Force Protectie (Fail2ban)**:
-  - Actief op SSH-poort `2223` (`/etc/fail2ban/jail.local`).
-  - Blokkeert bots na 3 mislukte pogingen binnen 10 minuten voor 24 uur (`bantime = 86400`).
-  - Whitelist (`ignoreip`) voor thuis-IP (`178.239.16.116`), localhost en server-IP.
-
-### 2.2 Actieve Rollen & Resterende Services
-1. **Mail Relay & MX Node (Postfix + OpenDKIM)**:
-   - Publieke MX server op poort 25 voor `mail.agrarix.it` (`85.214.248.88`).
-   - `/etc/mailname`: Ingesteld op `agrarix.it`.
-   - `/etc/aliases`: Lokale cron- en root-mails routeren naar `it-mbx@deboer-wennink.nl`.
-   - `/etc/postfix/virtual`: Actieve virtuele mail-forwarding:
-     - ViJoS mailings (`vijos-bestuur@agrarix.it`, `vijos-webwinkel@`, `vijos-webmaster@`, etc.).
-     - Aliasing voor `e-bladmuziek.nl`, `begrijpbaar-met-beeld.nl`, `martijndeboer.nl`, `leoniewennink.nl`, `ernadevries.nl`.
-   - OpenDKIM milter op `127.0.0.1:8891` (cryptografische signing voor `agrarix.it`, `pa4mdb.nl`, `agrarix.nl`).
-2. **Syslog Forwarding over WAN (mTLS RFC 5425)**:
-   - Rsyslog forwardt realtime systeemlogs (`*.*`) over WAN naar `registrix` (`mail.agrarix.net:6514`).
-   - Encryptie en authenticatie via x509 certificaten in `/etc/rsyslog-tls/`.
-   - Lokale disk queue `q_registrix` buffert logs bij internetonderbrekingen.
-3. **Resterende Actieve Websites op VPS1 (Apache 2.4.18)**:
-   - `e-bladmuziek.nl` cluster (`e-bladmuziek.nl`, `www.e-bladmuziek.nl`, `vijos.e-bladmuziek.nl`, `dev.e-bladmuziek.nl`, `demo.e-bladmuziek.nl`, `q-a.e-bladmuziek.nl`, `sites.e-bladmuziek.nl`).
-   - `begrijpbaar-met-beeld.nl` & `begrijpbaarmetbeeld.nl` (301 redirects naar externe URL).
-4. **Database Status**:
-   - `mysql.service` is uitgeschakeld en gestopt. Poort 3306 is gesloten.
-   - De verouderde test-database `wordpress_db` (PI4RCG) is gearchiveerd en verwijderd (zie Incident 8).
-
-### 2.3 Domeinverificatie Tool (`active-domain-check.sh`)
-Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/home/maarten/scripts/active-domain-check.sh`):
-- Controleert in realtime alle Apache vhosts, DNS A-records, HTTP/HTTPS statuscodes en SSL-certificaten.
-- Filter-opties:
-  - `active-domain-check`: Volledig overzicht van alle vhosts.
-  - `active-domain-check -l`: Alleen domeinen die daadwerkelijk live naar `agrarix.it` (`85.214.248.88`) routeren.
-  - `active-domain-check -m`: Alleen domeinen gemigreerd naar Proxmox Home (`178.239.16.x`).
-  - `active-domain-check -a`: Inclusief historische weesmappen in `/var/www/vhosts/`.
-  - `active-domain-check <domein1> <domein2>`: Specifieke domeinen inspecteren.
-
----
-
-## 📜 Deel 3: Historisch Incidenten- & Migratielogboek
+## Incidenten & Migratielogboek
 
 ### Incident 1: Postfix Relay Access Denied (454 4.7.1) Loop
 - **Datum**: 16 oktober 2026
@@ -200,7 +200,7 @@ Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/
 
 ---
 
-## 🌐 Deel 4: Domein Overzicht & Routing Status
+## Domein Overzicht & Routing Status
 
 ### Actief op VPS2 (`vps2.agrarix.net` - `212.227.209.36`)
 - `www.wennink.eu` & `wennink.eu` (inclusief user `pjheise`)
@@ -235,7 +235,7 @@ Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/
 
 ---
 
-## 🛠️ Onderhoud & Certificaatbeheer
+## Onderhoud & Certificaatbeheer
 
 ### Certificaten vernieuwen (Dry-run test)
 - **Op VPS2**:
