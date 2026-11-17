@@ -36,9 +36,11 @@ De test- en acceptatieomgeving (`https://new.e-bladmuziek.nl/`) draait reeds 100
   - OpenDKIM op VPS2 ondertekent alle uitgaande mails lokaal met RSA-2048 sleutel (`key._domainkey.e-bladmuziek.nl`)
   - DNS MX `e-bladmuziek.nl` omgezet naar `mail.agrarix.it` (`nuntix` / `178.239.16.116`)
   - Virtuele aliassen en catch-all `@e-bladmuziek.nl` op `nuntix` geconfigureerd naar `e-bladmuziek@agrarix.nl`
-- [ ] **VPS1 VHosts & Certificaten uitschakelen (Na validatie)**:
-  - Apache vhosts op VPS1 disablen (`a2dissite`) voor gemigreerde sites
-  - Oude certificaten op VPS1 opschonen (`certbot delete --cert-name ...`)
+- [x] **VPS1 VHosts & Certificaten uitschakelen (Voltooid)**:
+  - Apache vhosts op VPS1 gedisabled (`a2dissite`) voor gemigreerde sites
+  - Oude certificaten op VPS1 opgeschoond (22 stuks verwijderd via `certbot delete`)
+  - Alleen `000-default`, `default-ssl`, `begrijpbaar-met-beeld` en `old.e-bladmuziek.nl` actief
+  - `apache2ctl configtest` gevalideerd (`Syntax OK`)
 
 ---
 

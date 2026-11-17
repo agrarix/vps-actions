@@ -255,6 +255,10 @@ Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/
      - `old.e-bladmuziek.nl` geactiveerd in DNS en Apache op VPS1 (en voorbereid op VPS2) als direct archief.
   5. **SSL Certificaten**:
      - Let's Encrypt multi-domain certificaten uitgebreid via Certbot op VPS2 (`vijos.e-bladmuziek.nl` + `vijos-plus.` en `e-bladmuziek.nl` + `www.`).
+  6. **Deactivatie VHosts & Opschoning Certbot op VPS1**:
+     - Gemigreerde Apache VHosts op VPS1 uitgeschakeld via `a2dissite` (`vijos-e-bladmuziek`, `e-bladmuziek`, `dev-e-bladmuziek`, `agrarix-net`, `agrarix-nl`, `chp-agrarix-nl`).
+     - 22 verouderde Certbot certificaten van gemigreerde domeinen verwijderd op VPS1 (`certbot delete --cert-name`).
+     - Alleen `000-default.conf`, `default-ssl.conf`, `begrijpbaar-met-beeld.conf` en `old.e-bladmuziek.nl.conf` blijven actief op VPS1 (`apache2ctl configtest` -> `Syntax OK`).
 
 ---
 
