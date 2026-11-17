@@ -58,7 +58,7 @@ De externe VPS-omgeving bestaat uit twee systemen:
    - `begrijpbaar-met-beeld.nl` & `begrijpbaarmetbeeld.nl` (301 redirects naar externe URL).
 4. **Database Status**:
    - `mysql.service` is uitgeschakeld en gestopt. Poort 3306 is gesloten.
-   - De verouderde test-database `wordpress_db` (PI4RCG) is gearchiveerd en verwijderd (zie Incident 8).
+   - De verouderde test-database `wordpress_db` (PI4RCG) is gearchiveerd en verwijderd (zie Incident 10).
 
 ### Domeinverificatie Tool (`active-domain-check.sh`)
 Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/home/maarten/scripts/active-domain-check.sh`):
@@ -180,7 +180,29 @@ Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/
 - **Gemigreerde domeinen**: `netapp.link`, `www.netapp.link`, `anf.netapp.link`, `edu.netapp.link`, `tr.netapp.link`.
 - **Configuratie**: Docroots naar NAS met symlink `html ➔ pages`, HTTP/2 Let's Encrypt SSL en asset caching (7d) op `presentix`.
 
-### Incident 7: Migratie www.wennink.eu (+ wennink.eu) en User pjheise naar VPS2
+### Incident 7: Migratie carmenkalbermatten.ch, biancawennink.nl & Condoleanceregister naar VPS2
+- **Datum**: 31 oktober 2026
+- **Aanleiding**: Verhuizing van statische herinneringswebsites van `agrarix.it` naar `vps2.agrarix.net` (`212.227.209.36:2223`).
+- **Configuratie & Acties**:
+  1. Webcontent overgezet naar `/var/www/vhosts/` op VPS2 (eigenaar `automation:automation`).
+  2. Let's Encrypt SSL-certificaten geactiveerd via Certbot.
+  3. Dagelijkse fotowisseling-updaters ingericht in crontab (`upd_carmenkalbermatten.sh` om 01:11, `upd_biancawennink.sh` om 01:01).
+  4. Nieuw PHP 8.4 condoleanceregister met pre-moderatie en e-mailnotificaties uitgerold op `new.biancawennink.nl` via `scripts/vps2-deploy-condoleance.sh`.
+  5. DNS A-records bij Mijndomein omgezet naar `212.227.209.36`.
+
+### Incident 8: Inrichting new.e-bladmuziek.nl Acceptatieomgeving op VPS2
+- **Datum**: 31 oktober 2026
+- **Aanleiding**: Voorbereiding van de migratie van de e-bladmuziek bibliotheek vanaf VPS1 (`agrarix.it`) door het inrichten van een schone test- en acceptatieomgeving op VPS2 (`vps2.agrarix.net`).
+- **Configuratie & Acties**:
+  1. Datacenter-naar-datacenter rsync via SSH (poort 2223) van 3.7 GB aan bladmuziek (PDF/MP3) naar `/var/www/vhosts/new.e-bladmuziek.nl/html/` (eigenaar `automation:automation`).
+  2. Alle 40 `.htaccess` Apache Basic Auth paden geconverteerd van `/home/maarten/` naar `/home/automation/e-bladmuziek/htpwd/`.
+  3. CGI-scripts voor PIN-beheer (`preset-pin_htaccess.sh`, `set-own-pin_htaccess.sh`) ingericht onder `/cgi-bin/` met `mod_cgid`.
+  4. Uitgaande mail geconfigureerd via Postfix relay naar VPS1 wegens ontbreken van PTR-record bij IONOS, met OpenDKIM signing voor `e-bladmuziek.nl`.
+  5. Demo-orkest verwijderd uit de live presentatie en startpagina responsive herzien voor de 4 actieve orkesten.
+  6. Git deployment pipeline ingericht met Deploy Key op GitHub repository [`agrarix/e-bladmuziek`](https://github.com/agrarix/e-bladmuziek).
+- **Status**: Acceptatie-omgeving `https://new.e-bladmuziek.nl/` 100% operationeel op VPS2. Productiesites (`e-bladmuziek.nl`, `vijos.e-bladmuziek.nl`) draaien nog op VPS1 tot de definitieve livegang. Volledige documentatie in repo [`e-bladmuziek`](https://github.com/agrarix/e-bladmuziek).
+
+### Incident 9: Migratie www.wennink.eu (+ wennink.eu) en User pjheise naar VPS2
 - **Datum**: 16 november 2026
 - **Aanleiding**: Verhuizing van `wennink.eu` en beheerder `pjheise` van `agrarix.it` naar `vps2.agrarix.net` (`212.227.209.36:2223`).
 - **Configuratie**:
@@ -192,7 +214,7 @@ Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/
   6. Oude Apache vhosts en certificaten op `agrarix.it` verwijderd.
   7. SSH-daemon op VPS2 geconfigureerd op poort `2223` (identiek aan `agrarix.it`), zodat `pjheise` naadloos via SFTP/SSH kan inloggen.
 
-### Incident 8: Opruiming wordpress_db & Deactivatie MySQL Daemon op VPS1
+### Incident 10: Opruiming wordpress_db & Deactivatie MySQL Daemon op VPS1
 - **Datum**: 16 november 2026
 - **Aanleiding**: Opruiming van inactieve databases op `agrarix.it`.
 - **Bevinding**: `wordpress_db` was een inactieve testinstallatie uit juni 2022 voor `wp.agrarix.it` (PI4RCG) met 0 uploads en 3 dummy records. Geen enkele actieve service gebruikte MySQL.
