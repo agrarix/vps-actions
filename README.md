@@ -260,6 +260,21 @@ Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/
      - 22 verouderde Certbot certificaten van gemigreerde domeinen verwijderd op VPS1 (`certbot delete --cert-name`).
      - Alleen `000-default.conf`, `default-ssl.conf`, `begrijpbaar-met-beeld.conf` en `old.e-bladmuziek.nl.conf` blijven actief op VPS1 (`apache2ctl configtest` -> `Syntax OK`).
 
+### Actie 13: Herstel Remote Process Pipeline e-bladmuziek vanaf reservix naar VPS2
+- **Datum**: 18 november 2026
+- **Aanleiding**: `rem-proc_e-bladmuziek_vijos.sh` op `reservix` faalde na migratie naar VPS2.
+- **Oorzaken**:
+  1. SSH public key van `reservix` (`maarten@xynix`) ontbrak in `authorized_keys` op VPS2.
+  2. SSH poort 2223 op VPS2; `~/.ssh/config` op `reservix` miste `vps2.agrarix.net` en `rsync`/`ssh` in script gebruikten `${REMPORT}` niet expliciet.
+  3. Map `/home/automation/e-bladmuziek/bin/` (met `proc_e-bladmuziek.sh` v1.14 en `etc/` configs) ontbrak op VPS2.
+  4. Uitvoerbit (`chmod +x`) ontbrak op `rem-proc_e-bladmuziek_vijos.sh`.
+- **Oplossingen & Acties**:
+  1. ED25519 public key `maarten@xynix` toegevoegd aan `ansible/playbook_vps2.yml` en direct geïnjecteerd in `authorized_keys` op VPS2.
+  2. `vps2` en `vps2.agrarix.net` geconfigureerd in `~/.ssh/config` op `reservix` (poort 2223, user `automation`).
+  3. `rem-proc_e-bladmuziek_vijos.sh` aangepast met expliciete `-e "ssh -p ${REMPORT}"` voor rsync en `-p ${REMPORT}` voor ssh; `chmod +x` gezet.
+  4. `/home/automation/e-bladmuziek/bin/` en `etc/` van VPS1 gesynchroniseerd naar VPS2.
+  5. Script end-to-end succesvol getest vanaf `reservix` (`HTTP 200 OK` gevalideerd op live site).
+
 ---
 
 ## Domein Overzicht & Routing Status

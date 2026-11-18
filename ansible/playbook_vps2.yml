@@ -15,6 +15,7 @@
       - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDGY6LOg7sCINgz42x/Kw4dWTSMhULVRIgCrB79MRQkF nl19471@fenestrix"
       - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA4C2boKD510mewVvFXfbQXprfFXmHC8mDT32V10+wkw maarten@rpi"
       - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP3/K1qwOtpagSkvwsnFFRV5QW7xqVE8FJGrkBrNU1Ux automation@automation"
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGT8ZdlhEnyf/ZLSi9cVEeF70PySLrrjJN5E64eNNF0L maarten@xynix"
 
   tasks:
     - name: Set system timezone to Europe/Amsterdam
