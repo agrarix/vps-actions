@@ -272,8 +272,8 @@ Geïnstalleerd op `agrarix.it` onder `/usr/local/bin/active-domain-check` (en `/
   1. ED25519 public key `maarten@xynix` toegevoegd aan `ansible/playbook_vps2.yml` en direct geïnjecteerd in `authorized_keys` op VPS2.
   2. `vps2` en `vps2.agrarix.net` geconfigureerd in `~/.ssh/config` op `reservix` (poort 2223, user `automation`).
   3. `rem-proc_e-bladmuziek_vijos.sh` aangepast met expliciete `-e "ssh -p ${REMPORT}"` voor rsync en `-p ${REMPORT}` voor ssh; `chmod +x` gezet.
-  4. `/home/automation/e-bladmuziek/bin/` en `etc/` van VPS1 gesynchroniseerd naar VPS2.
-  5. Script end-to-end succesvol getest vanaf `reservix` (`HTTP 200 OK` gevalideerd op live site).
+  4. `/home/automation/e-bladmuziek/bin/`, `etc/` en `data/` (met subdivisies `ViJoS_Plus.3.17apr2027`, `ViJoS_Plus.4.Bekend`, `ViJoS_Plus.8.Archief`, etc.) van VPS1 gesynchroniseerd naar VPS2.
+  5. Script end-to-end succesvol getest vanaf `reservix` (`HTTP 200 OK` gevalideerd op live site met herstel van alle afzonderlijke rubrieken/lijsten).
 
 ---
 
